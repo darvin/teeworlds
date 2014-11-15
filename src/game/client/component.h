@@ -1,3 +1,5 @@
+/* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
+/* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #ifndef GAME_CLIENT_COMPONENT_H
 #define GAME_CLIENT_COMPONENT_H
 
@@ -10,7 +12,7 @@ protected:
 	friend class CGameClient;
 
 	CGameClient *m_pClient;
-	
+
 	// perhaps propagte pointers for these as well
 	class IKernel *Kernel() const { return m_pClient->Kernel(); }
 	class IGraphics *Graphics() const { return m_pClient->Graphics(); }
@@ -29,7 +31,7 @@ protected:
 	class CCollision *Collision() const { return m_pClient->Collision(); }
 public:
 	virtual ~CComponent() {}
-	
+
 	virtual void OnStateChange(int NewState, int OldState) {};
 	virtual void OnConsoleInit() {};
 	virtual void OnInit() {};

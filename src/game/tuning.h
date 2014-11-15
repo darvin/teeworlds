@@ -1,3 +1,5 @@
+/* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
+/* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #ifndef GAME_TUNING_H
 #define GAME_TUNING_H
 #undef GAME_TUNING_H // this file will be included several times
@@ -39,7 +41,6 @@ MACRO_TUNING_PARAM(LaserReach, laser_reach, 800.0f)
 MACRO_TUNING_PARAM(LaserBounceDelay, laser_bounce_delay, 150)
 MACRO_TUNING_PARAM(LaserBounceNum, laser_bounce_num, 1)
 MACRO_TUNING_PARAM(LaserBounceCost, laser_bounce_cost, 0)
-MACRO_TUNING_PARAM(LaserDamage, laser_damage, 5)
 
 MACRO_TUNING_PARAM(PlayerCollision, player_collision, 1)
 MACRO_TUNING_PARAM(PlayerHooking, player_hooking, 1)

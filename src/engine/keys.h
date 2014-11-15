@@ -1,3 +1,5 @@
+/* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
+/* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #ifndef ENGINE_KEYS_H
 #define ENGINE_KEYS_H
 /* AUTO GENERATED! DO NOT EDIT MANUALLY! */
@@ -246,6 +248,7 @@ enum
 	KEY_MOUSE_8 = 330,
 	KEY_MOUSE_WHEEL_UP = 331,
 	KEY_MOUSE_WHEEL_DOWN = 332,
+	KEY_MOUSE_9 = 333,
 	KEY_LAST,
 };
 

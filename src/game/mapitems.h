@@ -1,3 +1,5 @@
+/* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
+/* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #ifndef GAME_MAPITEMS_H
 #define GAME_MAPITEMS_H
 
@@ -5,10 +7,10 @@
 enum
 {
 	LAYERTYPE_INVALID=0,
-	LAYERTYPE_GAME, // not used
+	LAYERTYPE_GAME,
 	LAYERTYPE_TILES,
 	LAYERTYPE_QUADS,
-	
+
 	MAPITEMTYPE_VERSION=0,
 	MAPITEMTYPE_INFO,
 	MAPITEMTYPE_IMAGE,
@@ -16,15 +18,16 @@ enum
 	MAPITEMTYPE_GROUP,
 	MAPITEMTYPE_LAYER,
 	MAPITEMTYPE_ENVPOINTS,
-	
+
 
 	CURVETYPE_STEP=0,
 	CURVETYPE_LINEAR,
 	CURVETYPE_SLOW,
 	CURVETYPE_FAST,
 	CURVETYPE_SMOOTH,
+	CURVETYPE_BEZIER,
 	NUM_CURVETYPES,
-	
+
 	// game layer tiles
 	ENTITY_NULL=0,
 	ENTITY_SPAWN,
@@ -37,21 +40,22 @@ enum
 	ENTITY_WEAPON_SHOTGUN,
 	ENTITY_WEAPON_GRENADE,
 	ENTITY_POWERUP_NINJA,
-	ENTITY_WEAPON_RIFLE,
+	ENTITY_WEAPON_LASER,
 	NUM_ENTITIES,
-	
+
 	TILE_AIR=0,
 	TILE_SOLID,
 	TILE_DEATH,
 	TILE_NOHOOK,
-	
+
 	TILEFLAG_VFLIP=1,
 	TILEFLAG_HFLIP=2,
 	TILEFLAG_OPAQUE=4,
 	TILEFLAG_ROTATE=8,
-	
+
 	LAYERFLAG_DETAIL=1,
-	
+	TILESLAYERFLAG_GAME=1,
+
 	ENTITY_OFFSET=255-16*4,
 };
 
@@ -70,10 +74,10 @@ struct CQuad
 	CPoint m_aPoints[5];
 	CColor m_aColors[4];
 	CPoint m_aTexcoords[4];
-	
+
 	int m_PosEnv;
 	int m_PosEnvOffset;
-	
+
 	int m_ColorEnv;
 	int m_ColorEnvOffset;
 };
@@ -87,7 +91,17 @@ public:
 	unsigned char m_Reserved;
 };
 
-struct CMapItemImage
+struct CMapItemInfo
+{
+	enum { CURRENT_VERSION=1 };
+	int m_Version;
+	int m_Author;
+	int m_MapVersion;
+	int m_Credits;
+	int m_License;
+} ;
+
+struct CMapItemImage_v1
 {
 	int m_Version;
 	int m_Width;
@@ -96,6 +110,12 @@ struct CMapItemImage
 	int m_ImageName;
 	int m_ImageData;
 } ;
+
+struct CMapItemImage : public CMapItemImage_v1
+{
+	enum { CURRENT_VERSION=2 };
+	int m_Format;
+};
 
 struct CMapItemGroup_v1
 {
@@ -112,13 +132,15 @@ struct CMapItemGroup_v1
 
 struct CMapItemGroup : public CMapItemGroup_v1
 {
-	enum { CURRENT_VERSION=2 };
-	
+	enum { CURRENT_VERSION=3 };
+
 	int m_UseClipping;
 	int m_ClipX;
 	int m_ClipY;
 	int m_ClipW;
 	int m_ClipH;
+
+	int m_aName[3];
 } ;
 
 struct CMapItemLayer
@@ -130,46 +152,68 @@ struct CMapItemLayer
 
 struct CMapItemLayerTilemap
 {
+	enum { CURRENT_VERSION=3 };
+
 	CMapItemLayer m_Layer;
 	int m_Version;
-	
+
 	int m_Width;
 	int m_Height;
 	int m_Flags;
-	
+
 	CColor m_Color;
 	int m_ColorEnv;
 	int m_ColorEnvOffset;
-	
+
 	int m_Image;
 	int m_Data;
+
+	int m_aName[3];
 } ;
 
 struct CMapItemLayerQuads
 {
+	enum { CURRENT_VERSION=2 };
+
 	CMapItemLayer m_Layer;
 	int m_Version;
-	
+
 	int m_NumQuads;
 	int m_Data;
 	int m_Image;
+
+	int m_aName[3];
 } ;
 
 struct CMapItemVersion
 {
+	enum { CURRENT_VERSION=1 };
+
 	int m_Version;
 } ;
 
-struct CEnvPoint
+struct CEnvPoint_v1
 {
 	int m_Time; // in ms
 	int m_Curvetype;
 	int m_aValues[4]; // 1-4 depending on envelope (22.10 fixed point)
-	
-	bool operator<(const CEnvPoint &Other) { return m_Time < Other.m_Time; }
+
+	bool operator<(const CEnvPoint_v1 &Other) { return m_Time < Other.m_Time; }
 } ;
 
-struct CMapItemEnvelope
+struct CEnvPoint : public CEnvPoint_v1
+{
+	// bezier curve only
+	// dx in ms and dy as 22.10 fxp
+	int m_aInTangentdx[4];
+	int m_aInTangentdy[4];
+	int m_aOutTangentdx[4];
+	int m_aOutTangentdy[4];
+
+	bool operator<(const CEnvPoint& other) { return m_Time < other.m_Time; }
+};
+
+struct CMapItemEnvelope_v1
 {
 	int m_Version;
 	int m_Channels;
@@ -177,5 +221,17 @@ struct CMapItemEnvelope
 	int m_NumPoints;
 	int m_aName[8];
 } ;
+
+struct CMapItemEnvelope_v2 : public CMapItemEnvelope_v1
+{
+	enum { CURRENT_VERSION=2 };
+	int m_Synchronized;
+};
+
+struct CMapItemEnvelope : public CMapItemEnvelope_v2
+{
+	// bezier curve support
+	enum { CURRENT_VERSION=3 };
+};
 
 #endif

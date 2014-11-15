@@ -1,26 +1,26 @@
+/* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
+/* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #ifndef GAME_CLIENT_RENDER_H
 #define GAME_CLIENT_RENDER_H
 
+#include <engine/graphics.h>
 #include <base/vmath.h>
 #include <game/mapitems.h>
 #include "ui.h"
-
 
 class CTeeRenderInfo
 {
 public:
 	CTeeRenderInfo()
 	{
-		m_Texture = -1;
-		m_ColorBody = vec4(1,1,1,1);
-		m_ColorFeet = vec4(1,1,1,1);
+		for(int i = 0; i < 6; i++)
+			m_aColors[i] = vec4(1,1,1,1);
 		m_Size = 1.0f;
 		m_GotAirJump = 1;
 	};
-	
-	int m_Texture;
-	vec4 m_ColorBody;
-	vec4 m_ColorFeet;
+
+	IGraphics::CTextureHandle m_aTextures[6];
+	vec4 m_aColors[6];
 	float m_Size;
 	int m_GotAirJump;
 };
@@ -30,26 +30,25 @@ enum
 {
 	SPRITE_FLAG_FLIP_Y=1,
 	SPRITE_FLAG_FLIP_X=2,
-	
+
 	LAYERRENDERFLAG_OPAQUE=1,
 	LAYERRENDERFLAG_TRANSPARENT=2,
-	
+
 	TILERENDERFLAG_EXTEND=4,
 };
 
+typedef void (*ENVELOPE_EVAL)(float TimeOffset, int Env, float *pChannels, void *pUser);
 
 class CRenderTools
 {
 public:
 	class IGraphics *m_pGraphics;
 	class CUI *m_pUI;
-	
+
 	class IGraphics *Graphics() const { return m_pGraphics; }
 	class CUI *UI() const { return m_pUI; }
 
-	//typedef struct SPRITE;
-
-	void SelectSprite(struct SPRITE *pSprite, int Flags=0, int sx=0, int sy=0);
+	void SelectSprite(struct CDataSprite *pSprite, int Flags=0, int sx=0, int sy=0);
 	void SelectSprite(int id, int Flags=0, int sx=0, int sy=0);
 
 	void DrawSprite(float x, float y, float size);
@@ -57,8 +56,10 @@ public:
 	// rects
 	void DrawRoundRect(float x, float y, float w, float h, float r);
 	void DrawRoundRectExt(float x, float y, float w, float h, float r, int Corners);
-	
+	void DrawRoundRectExt4(float x, float y, float w, float h, vec4 ColorTopLeft, vec4 ColorTopRight, vec4 ColorBottomLeft, vec4 ColorBottomRight, float r, int Corners);
+
 	void DrawUIRect(const CUIRect *pRect, vec4 Color, int Corners, float Rounding);
+	void DrawUIRect4(const CUIRect *pRect, vec4 ColorTopLeft, vec4 ColorTopRight, vec4 ColorBottomLeft, vec4 ColorBottomRight, int Corners, float Rounding);
 
 	// larger rendering methods
 	void RenderTilemapGenerateSkip(class CLayers *pLayers);
@@ -68,13 +69,14 @@ public:
 
 	// map render methods (gc_render_map.cpp)
 	static void RenderEvalEnvelope(CEnvPoint *pPoints, int NumPoints, int Channels, float Time, float *pResult);
-	void RenderQuads(CQuad *pQuads, int NumQuads, int Flags, void (*pfnEval)(float TimeOffset, int Env, float *pChannels, void *pUser), void *pUser);
-	void RenderTilemap(CTile *pTiles, int w, int h, float Scale, vec4 Color, int Flags);
+	void RenderQuads(CQuad *pQuads, int NumQuads, int Flags, ENVELOPE_EVAL pfnEval, void *pUser);
+	void RenderTilemap(CTile *pTiles, int w, int h, float Scale, vec4 Color, int RenderFlags, ENVELOPE_EVAL pfnEval, void *pUser, int ColorEnv, int ColorEnvOffset);
 
 	// helpers
-	void MapscreenToWorld(float CenterX, float CenterY, float ParallaxX, float ParallaxY,
-		float OffsetX, float OffsetY, float Aspect, float Zoom, float *pPoints);	
-	
+	void MapScreenToWorld(float CenterX, float CenterY, float ParallaxX, float ParallaxY,
+		float OffsetX, float OffsetY, float Aspect, float Zoom, float aPoints[4]);
+	void MapScreenToGroup(float CenterX, float CenterY, CMapItemGroup *pGroup, float Zoom);
+
 };
 
 #endif

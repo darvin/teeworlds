@@ -4,42 +4,42 @@ SDL = {
 	OptFind = function (name, required)
 		local check = function(option, settings)
 			option.value = false
+			option.use_pkgconfig = false
 			option.use_sdlconfig = false
-			option.use_win32sdl = false
-			option.use_osxframework = false
+			option.use_winlib = 0
 			option.lib_path = nil
 			
-			if ExecuteSilent("sdl-config") > 0 and ExecuteSilent("sdl-config --cflags") == 0 then
+			if ExecuteSilent("pkg-config sdl") == 0 then
+				option.value = true
+				option.use_pkgconfig = true
+			elseif ExecuteSilent("sdl-config") > 0 and ExecuteSilent("sdl-config --cflags") == 0 then
 				option.value = true
 				option.use_sdlconfig = true
 			end
 			
 			if platform == "win32" then
 				option.value = true
-				option.use_win32sdl = true
-			end
-			
-			if platform == "macosx" then
+				option.use_winlib = 32
+			elseif platform == "win64" then
 				option.value = true
-				option.use_osxframework = true
-				option.use_sdlconfig = false
+				option.use_winlib = 64
 			end
 		end
 		
 		local apply = function(option, settings)
-			if option.use_sdlconfig == true then
+			if option.use_pkgconfig == true then
+				settings.cc.flags:Add("`pkg-config --cflags sdl`")
+				settings.link.flags:Add("`pkg-config --libs sdl`")
+			elseif option.use_sdlconfig == true then
 				settings.cc.flags:Add("`sdl-config --cflags`")
 				settings.link.flags:Add("`sdl-config --libs`")
-			end
-
-			if option.use_osxframework == true then
-				client_settings.link.frameworks:Add("SDL")
-				client_settings.cc.includes:Add("/Library/Frameworks/SDL.framework/Headers")
-			end
-
-			if option.use_win32sdl == true then
+			elseif option.use_winlib > 0 then
 				settings.cc.includes:Add(SDL.basepath .. "/include")
-				settings.link.libpath:Add(SDL.basepath .. "/vc2005libs")
+				if option.use_winlib == 32 then
+					settings.link.libpath:Add(SDL.basepath .. "/lib32")
+				else
+					settings.link.libpath:Add(SDL.basepath .. "/lib64")
+				end
 				settings.link.libs:Add("SDL")
 				settings.link.libs:Add("SDLmain")
 			end
@@ -47,16 +47,17 @@ SDL = {
 		
 		local save = function(option, output)
 			output:option(option, "value")
+			output:option(option, "use_pkgconfig")
 			output:option(option, "use_sdlconfig")
-			output:option(option, "use_win32sdl")
-			output:option(option, "use_osxframework")
+			output:option(option, "use_winlib")
 		end
 		
 		local display = function(option)
 			if option.value == true then
+				if option.use_pkgconfig == true then return "using pkg-config" end
 				if option.use_sdlconfig == true then return "using sdl-config" end
-				if option.use_win32sdl == true then return "using supplied win32 libraries" end
-				if option.use_osxframework == true then return "using osx framework" end
+				if option.use_winlib == 32 then return "using supplied win32 libraries" end
+				if option.use_winlib == 64 then return "using supplied win64 libraries" end
 				return "using unknown method"
 			else
 				if option.required then

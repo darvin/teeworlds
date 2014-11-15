@@ -1,8 +1,11 @@
+/* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
+/* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #ifndef ENGINE_CLIENT_H
 #define ENGINE_CLIENT_H
 #include "kernel.h"
 
 #include "message.h"
+#include "graphics.h"
 
 class IClient : public IInterface
 {
@@ -16,13 +19,16 @@ protected:
 	int m_CurGameTick;
 	float m_GameIntraTick;
 	float m_GameTickTime;
-	
+
+	int m_CurMenuTick;
+	int64 m_MenuStartTime;
+
 	int m_PredTick;
 	float m_PredIntraTick;
-	
+
 	float m_LocalTime;
-	float m_FrameTime;
-	
+	float m_RenderFrameTime;
+
 	int m_GameTickSpeed;
 public:
 
@@ -30,7 +36,7 @@ public:
 	{
 	public:
 		int m_Type;
-		int m_Id;
+		int m_ID;
 		int m_DataSize;
 	};
 
@@ -59,22 +65,28 @@ public:
 	// tick time access
 	inline int PrevGameTick() const { return m_PrevGameTick; }
 	inline int GameTick() const { return m_CurGameTick; }
+	inline int MenuTick() const { return m_CurMenuTick; }
 	inline int PredGameTick() const { return m_PredTick; }
 	inline float IntraGameTick() const { return m_GameIntraTick; }
 	inline float PredIntraGameTick() const { return m_PredIntraTick; }
 	inline float GameTickTime() const { return m_GameTickTime; }
 	inline int GameTickSpeed() const { return m_GameTickSpeed; }
-	
+
 	// other time access
-	inline float FrameTime() const { return m_FrameTime; }
+	inline float RenderFrameTime() const { return m_RenderFrameTime; }
 	inline float LocalTime() const { return m_LocalTime; }
-	
+
 	// actions
 	virtual void Connect(const char *pAddress) = 0;
 	virtual void Disconnect() = 0;
 	virtual void Quit() = 0;
 	virtual const char *DemoPlayer_Play(const char *pFilename, int StorageType) = 0;
-	virtual void DemoRecorder_Start(const char *pFilename) = 0;
+	virtual void DemoRecorder_Start(const char *pFilename, bool WithTimestamp) = 0;
+	virtual void DemoRecorder_HandleAutoStart() = 0;
+	virtual void DemoRecorder_Stop() = 0;
+	virtual void RecordGameMessage(bool State) = 0;
+	virtual void AutoScreenshot_Start() = 0;
+	virtual void ServerBrowserUpdate() = 0;
 
 	// networking
 	virtual void EnterGame() = 0;
@@ -82,31 +94,34 @@ public:
 	//
 	virtual int MapDownloadAmount() = 0;
 	virtual int MapDownloadTotalsize() = 0;
-	
+
 	// input
 	virtual int *GetInput(int Tick) = 0;
-	
+
 	// remote console
 	virtual void RconAuth(const char *pUsername, const char *pPassword) = 0;
 	virtual bool RconAuthed() = 0;
+	virtual bool UseTempRconCommands() = 0;
 	virtual void Rcon(const char *pLine) = 0;
-	
+
 	// server info
 	virtual void GetServerInfo(class CServerInfo *pServerInfo) = 0;
-	
+
 	// snapshot interface
-	
+
 	enum
 	{
 		SNAP_CURRENT=0,
 		SNAP_PREV=1
 	};
-		
+
 	// TODO: Refactor: should redo this a bit i think, too many virtual calls
-	virtual int SnapNumItems(int SnapId) = 0;
-	virtual void *SnapFindItem(int SnapId, int Type, int Id) = 0;
-	virtual void *SnapGetItem(int SnapId, int Index, CSnapItem *pItem) = 0;
-	virtual void SnapInvalidateItem(int SnapId, int Index) = 0;
+	virtual int SnapNumItems(int SnapID) = 0;
+	virtual void *SnapFindItem(int SnapID, int Type, int ID) = 0;
+	virtual void *SnapGetItem(int SnapID, int Index, CSnapItem *pItem) = 0;
+	virtual void SnapInvalidateItem(int SnapID, int Index) = 0;
+	
+	virtual void *SnapNewItem(int Type, int ID, int Size) = 0;
 
 	virtual void SnapSetStaticsize(int ItemType, int Size) = 0;
 
@@ -115,16 +130,20 @@ public:
 	template<class T>
 	int SendPackMsg(T *pMsg, int Flags)
 	{
-		CMsgPacker Packer(pMsg->MsgID());
+		CMsgPacker Packer(pMsg->MsgID(), false);
 		if(pMsg->Pack(&Packer))
 			return -1;
 		return SendMsg(&Packer, Flags);
 	}
-	
-	// 
+
+	//
 	virtual const char *ErrorString() = 0;
 	virtual const char *LatestVersion() = 0;
 	virtual bool ConnectionProblems() = 0;
+
+	virtual bool SoundInitFailed() = 0;
+
+	virtual IGraphics::CTextureHandle GetDebugFont() = 0; // TODO: remove this function
 };
 
 class IGameClient : public IInterface
@@ -137,16 +156,18 @@ public:
 	virtual void OnRconLine(const char *pLine) = 0;
 	virtual void OnInit() = 0;
 	virtual void OnNewSnapshot() = 0;
+	virtual void OnDemoRecSnap() = 0;
 	virtual void OnEnterGame() = 0;
 	virtual void OnShutdown() = 0;
 	virtual void OnRender() = 0;
 	virtual void OnStateChange(int NewState, int OldState) = 0;
 	virtual void OnConnected() = 0;
-	virtual void OnMessage(int MsgId, CUnpacker *pUnpacker) = 0;
+	virtual void OnMessage(int MsgID, CUnpacker *pUnpacker) = 0;
 	virtual void OnPredict() = 0;
-	
+	virtual void OnActivateEditor() = 0;
+
 	virtual int OnSnapInput(int *pData) = 0;
-	
+
 	virtual const char *GetItemName(int Type) = 0;
 	virtual const char *Version() = 0;
 	virtual const char *NetVersion() = 0;

@@ -1,4 +1,5 @@
-// copyright (c) 2007 magnus auvinen, see licence.txt for more info
+/* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
+/* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include "SDL.h"
 
 #include <base/system.h>
@@ -34,6 +35,7 @@ CInput::CInput()
 
 	m_InputCurrent = 0;
 	m_InputGrabbed = 0;
+	m_InputDispatched = false;
 
 	m_LastRelease = 0;
 	m_ReleaseDelta = -1;
@@ -107,7 +109,7 @@ int CInput::KeyState(int Key)
 	return m_aInputState[m_InputCurrent][Key];
 }
 
-void CInput::Update()
+int CInput::Update()
 {
 	if(m_InputGrabbed && !Graphics()->WindowActive())
 		MouseModeAbsolute();
@@ -115,10 +117,14 @@ void CInput::Update()
 	/*if(!input_grabbed && Graphics()->WindowActive())
 		Input()->MouseModeRelative();*/
 
-	// clear and begin count on the other one
-	m_InputCurrent^=1;
-	mem_zero(&m_aInputCount[m_InputCurrent], sizeof(m_aInputCount[m_InputCurrent]));
-	mem_zero(&m_aInputState[m_InputCurrent], sizeof(m_aInputState[m_InputCurrent]));
+	if(m_InputDispatched)
+	{
+		// clear and begin count on the other one
+		m_InputCurrent^=1;
+		mem_zero(&m_aInputCount[m_InputCurrent], sizeof(m_aInputCount[m_InputCurrent]));
+		mem_zero(&m_aInputState[m_InputCurrent], sizeof(m_aInputState[m_InputCurrent]));
+		m_InputDispatched = false;
+	}
 
 	{
 		int i;
@@ -138,6 +144,7 @@ void CInput::Update()
 	if(i&SDL_BUTTON(6)) m_aInputState[m_InputCurrent][KEY_MOUSE_6] = 1;
 	if(i&SDL_BUTTON(7)) m_aInputState[m_InputCurrent][KEY_MOUSE_7] = 1;
 	if(i&SDL_BUTTON(8)) m_aInputState[m_InputCurrent][KEY_MOUSE_8] = 1;
+	if(i&SDL_BUTTON(9)) m_aInputState[m_InputCurrent][KEY_MOUSE_9] = 1;
 
 	{
 		SDL_Event Event;
@@ -153,7 +160,7 @@ void CInput::Update()
 					// skip private use area of the BMP(contains the unicodes for keyboard function keys on MacOS)
 					if(Event.key.keysym.unicode < 0xE000 || Event.key.keysym.unicode > 0xF8FF)	// ignore_convention
 						AddEvent(Event.key.keysym.unicode, 0, 0); // ignore_convention
-                    Key = Event.key.keysym.sym;  // ignore_convention
+					Key = Event.key.keysym.sym; // ignore_convention
 					break;
 				case SDL_KEYUP:
 					Action = IInput::FLAG_RELEASE;
@@ -180,13 +187,12 @@ void CInput::Update()
 					if(Event.button.button == 6) Key = KEY_MOUSE_6; // ignore_convention
 					if(Event.button.button == 7) Key = KEY_MOUSE_7; // ignore_convention
 					if(Event.button.button == 8) Key = KEY_MOUSE_8; // ignore_convention
+					if(Event.button.button == 9) Key = KEY_MOUSE_9; // ignore_convention
 					break;
 
 				// other messages
 				case SDL_QUIT:
-					// TODO: cleaner exit
-					exit(0); // ignore_convention
-					break;
+					return 1;
 			}
 
 			//
@@ -200,6 +206,8 @@ void CInput::Update()
 
 		}
 	}
+
+	return 0;
 }
 
 

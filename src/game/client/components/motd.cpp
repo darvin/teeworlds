@@ -1,10 +1,12 @@
+/* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
+/* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include <engine/shared/config.h>
 #include <engine/graphics.h>
 #include <engine/textrender.h>
 #include <engine/keys.h>
 
-#include <game/generated/protocol.h>
-#include <game/generated/client_data.h>
+#include <generated/protocol.h>
+#include <generated/client_data.h>
 #include <game/client/gameclient.h>
 
 #include "motd.h"
@@ -16,7 +18,7 @@ void CMotd::Clear()
 
 bool CMotd::IsActive()
 {
-	return time_get() < m_ServerMotdTime;	
+	return time_get() < m_ServerMotdTime;
 }
 
 void CMotd::OnStateChange(int NewState, int OldState)
@@ -29,19 +31,19 @@ void CMotd::OnRender()
 {
 	if(!IsActive())
 		return;
-		
+
 	float Width = 400*3.0f*Graphics()->ScreenAspect();
 	float Height = 400*3.0f;
 
 	Graphics()->MapScreen(0, 0, Width, Height);
-	
+
 	float h = 800.0f;
 	float w = 650.0f;
 	float x = Width/2 - w/2;
 	float y = 150.0f;
 
 	Graphics()->BlendNormal();
-	Graphics()->TextureSet(-1);
+	Graphics()->TextureClear();
 	Graphics()->QuadsBegin();
 	Graphics()->SetColor(0,0,0,0.5f);
 	RenderTools()->DrawRoundRect(x, y, w, h, 40.0f);
@@ -59,7 +61,7 @@ void CMotd::OnMessage(int MsgType, void *pRawMsg)
 	{
 		CNetMsg_Sv_Motd *pMsg = (CNetMsg_Sv_Motd *)pRawMsg;
 
-		// process escaping			
+		// process escaping
 		str_copy(m_aServerMotd, pMsg->m_pMessage, sizeof(m_aServerMotd));
 		for(int i = 0; m_aServerMotd[i]; i++)
 		{

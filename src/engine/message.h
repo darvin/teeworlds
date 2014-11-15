@@ -1,3 +1,5 @@
+/* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
+/* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #ifndef ENGINE_MESSAGE_H
 #define ENGINE_MESSAGE_H
 
@@ -6,10 +8,10 @@
 class CMsgPacker : public CPacker
 {
 public:
-	CMsgPacker(int Type)
+	CMsgPacker(int Type, bool System=false)
 	{
 		Reset();
-		AddInt(Type);
+		AddInt((Type<<1)|(System?1:0));
 	}
 };
 
